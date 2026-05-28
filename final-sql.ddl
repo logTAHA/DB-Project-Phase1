@@ -1,0 +1,171 @@
+CREATE TABLE "User" (
+    user_id SERIAL NOT NULL,
+    first_name varchar(50) NOT NULL,
+    last_name varchar(50) NOT NULL,
+    role varchar(50) NOT NULL,
+    email varchar(255) NOT NULL UNIQUE,
+    email_verified bool DEFAULT '0' NOT NULL,
+    phone_number varchar(20) NOT NULL UNIQUE,
+    phone_verified bool NOT NULL,
+    registration_date timestamp NOT NULL,
+    password varchar(255) NOT NULL,
+    city_id int4 NOT NULL,
+    status bool DEFAULT '1' NOT NULL,
+    PRIMARY KEY (user_id)
+);
+ALTER TABLE "User" ADD CONSTRAINT FKUser627899 FOREIGN KEY (city_id) REFERENCES City (city_id);
+
+CREATE TABLE City (
+    city_id SERIAL NOT NULL,
+    name varchar(255),
+    PRIMARY KEY (city_id)
+);
+
+CREATE TABLE Ticket (
+    ticket_id SERIAL NOT NULL,
+    league_id int4 NOT NULL,
+    sport_id int4 NOT NULL,
+    venue_id int4 NOT NULL,
+    match_time timestamp NOT NULL,
+    host_team_id int4 NOT NULL,
+    guest_team_id int4 NOT NULL,
+    remaining_capacity int4 NOT NULL,
+    organizer_id int4 NOT NULL,
+    PRIMARY KEY (ticket_id)
+);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket847467 FOREIGN KEY (sport_id) REFERENCES Sport (sport_id);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket184630 FOREIGN KEY (host_team_id) REFERENCES Team (team_id);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket803544 FOREIGN KEY (guest_team_id) REFERENCES Team (team_id);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket301303 FOREIGN KEY (venue_id) REFERENCES Venue (venue_id);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket778197 FOREIGN KEY (league_id) REFERENCES League (league_id);
+ALTER TABLE Ticket ADD CONSTRAINT FKTicket363782 FOREIGN KEY (organizer_id) REFERENCES Organizer (organizer_id);
+
+CREATE TABLE Sport (
+    sport_id SERIAL NOT NULL,
+    sport_name int4 NOT NULL,
+    PRIMARY KEY (sport_id)
+);
+
+CREATE TABLE Team (
+    team_id SERIAL NOT NULL,
+    team_name varchar(50) NOT NULL,
+    sport_id int4 NOT NULL,
+    city_id int4 NOT NULL,
+    PRIMARY KEY (team_id)
+);
+ALTER TABLE Team ADD CONSTRAINT FKTeam850469 FOREIGN KEY (sport_id) REFERENCES Sport (sport_id);
+ALTER TABLE Team ADD CONSTRAINT FKTeam584525 FOREIGN KEY (city_id) REFERENCES City (city_id);
+
+CREATE TABLE Venue (
+    venue_id SERIAL NOT NULL,
+    name varchar(50) NOT NULL,
+    city_id int4 NOT NULL,
+    full_address varchar(255) NOT NULL,
+    PRIMARY KEY (venue_id)
+);
+ALTER TABLE Venue ADD CONSTRAINT FKVenue523119 FOREIGN KEY (city_id) REFERENCES City (city_id);
+
+CREATE TABLE Organizer (
+    organizer_id SERIAL NOT NULL,
+    is_company bool DEFAULT '1' NOT NULL,
+    name varchar(50) NOT NULL,
+    email varchar(255) NOT NULL,
+    phone_number varchar(20) NOT NULL,
+    PRIMARY KEY (organizer_id)
+);
+
+CREATE TABLE Ticket_Details (
+    ticket_id int4 NOT NULL,
+    section int4 NOT NULL,
+    row int4 NOT NULL,
+    seat int4 NOT NULL,
+    category_id int4 NOT NULL,
+    price numeric(10, 2) NOT NULL,
+    amenities varchar(255) NOT NULL,
+    PRIMARY KEY (ticket_id, section, row, seat)
+);
+ALTER TABLE Ticket_Details ADD CONSTRAINT FKTicket_Det818956 FOREIGN KEY (ticket_id) REFERENCES Ticket (ticket_id);
+ALTER TABLE Ticket_Details ADD CONSTRAINT FKTicket_Det308668 FOREIGN KEY (category_id) REFERENCES Ticket_Category (category_id);
+
+CREATE TABLE League (
+    league_id SERIAL NOT NULL,
+    name varchar(50) NOT NULL,
+    sport_id int4 NOT NULL,
+    PRIMARY KEY (league_id)
+);
+ALTER TABLE League ADD CONSTRAINT FKLeague637937 FOREIGN KEY (sport_id) REFERENCES Sport (sport_id);
+
+CREATE TABLE Ticket_Category (
+    category_id SERIAL NOT NULL,
+    name varchar(50) NOT NULL,
+    PRIMARY KEY (category_id)
+);
+
+CREATE TABLE Reservations (
+    reservation_id SERIAL NOT NULL,
+    user_id int4 NOT NULL,
+    ticket_id int4 NOT NULL,
+    section int4 NOT NULL,
+    row int4 NOT NULL,
+    seat int4 NOT NULL,
+    price numeric(10, 2) NOT NULL,
+    status varchar(255) NOT NULL,
+    reservation_time timestamp NOT NULL,
+    expiration_time timestamp NOT NULL,
+    PRIMARY KEY (reservation_id)
+);
+CREATE INDEX Reservations_user_id ON Reservations (user_id);
+CREATE INDEX Reservations_ticket_id ON Reservations (ticket_id);
+CREATE INDEX Reservations_section ON Reservations (section);
+CREATE INDEX Reservations_row ON Reservations (row);
+CREATE INDEX Reservations_seat ON Reservations (seat);
+ALTER TABLE Reservations ADD CONSTRAINT FKReservatio195690 FOREIGN KEY (user_id) REFERENCES "User" (user_id);
+ALTER TABLE Reservations ADD CONSTRAINT FKReservatio505821 FOREIGN KEY (ticket_id, section, row, seat) REFERENCES Ticket_Details (ticket_id, section, row, seat);
+
+CREATE TABLE Payment (
+    payment_id SERIAL NOT NULL,
+    user_id int4 NOT NULL,
+    wallet_id int4,
+    reservation_id int4,
+    type varchar(50) NOT NULL,
+    method varchar(50) NOT NULL,
+    status varchar(50) NOT NULL,
+    time timestamp,
+    PRIMARY KEY (payment_id)
+);
+CREATE INDEX Payment_user_id ON Payment (user_id);
+CREATE INDEX Payment_wallet_id ON Payment (wallet_id);
+CREATE INDEX Payment_reservation_id ON Payment (reservation_id);
+ALTER TABLE Payment ADD CONSTRAINT FKPayment352697 FOREIGN KEY (user_id) REFERENCES "User" (user_id);
+ALTER TABLE Payment ADD CONSTRAINT FKPayment817588 FOREIGN KEY (reservation_id) REFERENCES Reservations (reservation_id);
+ALTER TABLE Payment ADD CONSTRAINT FKPayment820337 FOREIGN KEY (wallet_id) REFERENCES Wallet (wallet_id);
+
+CREATE TABLE Wallet (
+    wallet_id SERIAL NOT NULL,
+    user_id int4 NOT NULL,
+    balance numeric(12, 2) DEFAULT 0 NOT NULL,
+    updated_at timestamp NOT NULL,
+    PRIMARY KEY (wallet_id)
+);
+ALTER TABLE Wallet ADD CONSTRAINT FKWallet946992 FOREIGN KEY (user_id) REFERENCES "User" (user_id);
+
+CREATE TABLE Report (
+    report_id SERIAL NOT NULL,
+    user_id int4 NOT NULL,
+    support_id int4,
+    reservation_id int4,
+    payment_id int4,
+    type varchar(255) NOT NULL,
+    reported_at timestamp NOT NULL,
+    report varchar(255) NOT NULL,
+    status varchar(50) NOT NULL,
+    response varchar(255),
+    responded_at timestamp,
+    PRIMARY KEY (report_id)
+);
+CREATE INDEX Report_user_id ON Report (user_id);
+CREATE INDEX Report_support_id ON Report (support_id);
+ALTER TABLE Report ADD CONSTRAINT FKReport276353 FOREIGN KEY (user_id) REFERENCES "User" (user_id);
+ALTER TABLE Report ADD CONSTRAINT FKReport930350 FOREIGN KEY (support_id) REFERENCES "User" (user_id);
+ALTER TABLE Report ADD CONSTRAINT FKReport874647 FOREIGN KEY (payment_id) REFERENCES Payment (payment_id);
+ALTER TABLE Report ADD CONSTRAINT FKReport160129 FOREIGN KEY (reservation_id) REFERENCES Reservations (reservation_id);
